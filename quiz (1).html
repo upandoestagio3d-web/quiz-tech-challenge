@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Tech Challenge</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;
+  --surface:#161616;
+  --surface2:#1f1f1f;
+  --border:#2a2a2a;
+  --text:#e8e8e8;
+  --muted:#666;
+  --cat:#3b82f6; /* cor dinâmica da categoria */
+  --radius:12px;
+  --mono:'Space Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+}
+body{
+  font-family:var(--sans);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  overflow-x:hidden;
+}
+
+/* ── CANVAS ANIMADO ── */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.35}
+
+/* ── WRAPPER ── */
+.wrap{position:relative;z-index:1;width:100%;max-width:620px}
+
+/* ── CARD ── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:32px 28px;
+  position:relative;
+  overflow:hidden;
+}
+.card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background:var(--cat);
+  transition:background .4s;
+}
+
+/* ── TELAS ── */
+.tela{display:none}
+.tela.ativa{display:block}
+
+/* ──────────────────────────
+   TELA INICIAL
+────────────────────────── */
+.logo{margin-bottom:28px;text-align:center}
+.logo-tag{
+  font-family:var(--mono);
+  font-size:.72rem;
+  color:var(--cat);
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  margin-bottom:8px;
+  transition:color .4s;
+}
+.logo-nome{
+  font-family:var(--mono);
+  font-size:2.2rem;
+  font-weight:700;
+  letter-spacing:-.02em;
+  line-height:1;
+  color:var(--text);
+}
+.logo-nome span{color:var(--cat);transition:color .4s}
+.logo-sub{font-size:.85rem;color:var(--muted);margin-top:6px}
+
+/* recorde */
+.recorde-bar{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:.78rem;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:9px 14px;margin-bottom:24px;
+  color:var(--muted);
+}
+.recorde-bar strong{color:#f59e0b;margin-left:auto}
+
+/* categorias */
+.sec-titulo{
+  font-family:var(--mono);font-size:.65rem;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px;
+}
+.cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.cat-btn{
+  background:var(--surface2);border:2px solid var(--border);
+  border-radius:var(--radius);padding:14px 8px;
+  cursor:pointer;text-align:center;transition:.18s ease;
+  font-family:var(--sans);position:relative;overflow:hidden;
+}
+.cat-btn::after{
+  content:'';position:absolute;inset:0;
+  background:var(--cor,#3b82f6);opacity:0;transition:.18s;
+}
+.cat-btn:hover::after,.cat-btn.sel::after{opacity:.08}
+.cat-btn.sel{border-color:var(--cor,#3b82f6)}
+.cat-icone{font-size:1.6rem;display:block;margin-bottom:5px}
+.cat-nome{font-size:.78rem;font-weight:600;color:var(--text)}
+.cat-qtd{font-size:.68rem;color:var(--muted);margin-top:2px}
+
+/* div */
+.div{height:1px;background:var(--border);margin:20px 0}
+
+/* botões */
+.btn{
+  display:block;width:100%;
+  padding:13px 18px;border-radius:var(--radius);
+  font-family:var(--sans);font-size:.93rem;font-weight:600;
+  cursor:pointer;transition:.18s ease;border:none;
+}
+.btn-p{background:var(--cat);color:#000;transition:background .4s,opacity .18s}
+.btn-p:hover{opacity:.88}
+.btn-p:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;opacity:1}
+.btn-s{background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px}
+.btn-s:hover{border-color:var(--cat);color:var(--text)}
+
+/* ──────────────────────────
+   TELA QUIZ
+────────────────────────── */
+/* HUD */
+.hud{
+  display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;
+}
+.hud-pill{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:99px;padding:5px 12px;
+  font-family:var(--mono);font-size:.78rem;
+  display:flex;align-items:center;gap:6px;
+}
+.hud-pill .val{color:var(--cat);font-weight:700;transition:color .4s}
+.hud-pill.lives .val{color:var(--text)}
+
+/* cronômetro */
+.timer-row{
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.timer-num{
+  font-family:var(--mono);font-size:1.1rem;font-weight:700;
+  min-width:28px;color:var(--cat);transition:color .3s;
+}
+.timer-num.urgent{color:#ef4444}
+.timer-track{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+.timer-fill{
+  height:100%;border-radius:99px;background:var(--cat);
+  transition:width .9s linear,background .3s;
+}
+.timer-fill.urgent{background:#ef4444}
+
+/* badge categoria */
+.cat-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:.7rem;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;padding:4px 10px;border-radius:99px;
+  background:color-mix(in srgb,var(--cat) 15%,transparent);
+  color:var(--cat);border:1px solid color-mix(in srgb,var(--cat) 35%,transparent);
+  margin-bottom:12px;transition:background .4s,color .4s,border-color .4s;
+}
+
+/* progresso */
+.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.prog-label{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.prog-track{height:3px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:18px}
+.prog-fill{height:100%;border-radius:99px;background:var(--cat);transition:width .4s ease,background .4s}
+
+/* pergunta */
+.q-texto{
+  font-size:1.1rem;font-weight:500;line-height:1.6;
+  margin-bottom:18px;min-height:48px;
+}
+
+/* opções */
+.opcoes{display:grid;gap:8px;margin-bottom:16px}
+.op-btn{
+  width:100%;padding:12px 14px;border-radius:var(--radius);
+  background:var(--surface2);border:1.5px solid var(--border);
+  color:var(--text);font-family:var(--sans);font-size:.9rem;
+  font-weight:500;text-align:left;cursor:pointer;
+  display:flex;align-items:center;gap:12px;transition:.15s ease;
+}
+.op-btn .k{
+  font-family:var(--mono);font-size:.7rem;font-weight:700;
+  width:24px;height:24px;border-radius:6px;flex-shrink:0;
+  background:var(--border);display:flex;align-items:center;justify-content:center;
+  transition:.15s;
+}
+.op-btn:not(:disabled):hover{border-color:var(--cat)}
+.op-btn:not(:disabled):hover .k{background:var(--cat);color:#000}
+.op-btn:disabled{cursor:not-allowed;opacity:.7}
+.op-btn.ok{border-color:#22c55e;background:rgba(34,197,94,.08);color:#22c55e}
+.op-btn.ok .k{background:#22c55e;color:#000}
+.op-btn.fail{border-color:#ef4444;background:rgba(239,68,68,.08);color:#ef4444}
+.op-btn.fail .k{background:#ef4444;color:#fff}
+
+/* feedback */
+.feedback{
+  min-height:22px;font-size:.85rem;font-weight:600;
+  text-align:center;margin-bottom:12px;
+  transition:opacity .2s;
+}
+
+/* ──────────────────────────
+   TELA RESULTADO
+────────────────────────── */
+.res-icone{font-size:3.2rem;text-align:center;margin-bottom:8px}
+.res-titulo{
+  font-family:var(--mono);font-size:1.8rem;font-weight:700;
+  text-align:center;margin-bottom:4px;
+}
+.res-sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:20px}
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.res-item{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 8px;text-align:center;
+}
+.res-val{font-family:var(--mono);font-size:1.6rem;font-weight:700}
+.res-lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:3px}
+.rec-novo{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);
+  border-radius:8px;padding:9px;margin-bottom:16px;
+  font-size:.82rem;color:#f59e0b;font-weight:600;
+}
+.nome-wrap{margin-bottom:16px}
+.nome-wrap label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:6px}
+.nome-wrap input{
+  width:100%;padding:11px 13px;
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:var(--radius);color:var(--text);
+  font-family:var(--sans);font-size:.9rem;outline:none;transition:.15s;
+}
+.nome-wrap input:focus{border-color:var(--cat)}
+.nome-wrap input::placeholder{color:var(--border)}
+
+/* ──────────────────────────
+   TELA RANKING
+────────────────────────── */
+.rank-tit{
+  font-family:var(--mono);font-size:1.4rem;font-weight:700;
+  margin-bottom:18px;
+}
+.rank-lista{display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+.rank-item{
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:11px 14px;
+}
+.rank-pos{font-family:var(--mono);font-size:1rem;font-weight:700;min-width:26px;color:var(--muted)}
+.rank-pos.g{color:#f59e0b}.rank-pos.s{color:#94a3b8}.rank-pos.b{color:#b45309}
+.rank-info{flex:1}
+.rank-nome{font-weight:600;font-size:.88rem}
+.rank-det{font-size:.7rem;color:var(--muted);margin-top:2px}
+.rank-pts{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--cat)}
+.rank-vazio{text-align:center;color:var(--muted);padding:24px;font-size:.85rem}
+
+/* filtros ranking */
+.rank-filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.filtro-btn{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:99px;padding:4px 12px;
+  font-size:.72rem;font-weight:600;cursor:pointer;
+  font-family:var(--sans);color:var(--muted);transition:.15s;
+}
+.filtro-btn.ativo,.filtro-btn:hover{border-color:var(--cat);color:var(--text)}
+
+/* ──────────────────────────
+   ANIMAÇÕES
+────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.anima{animation:fadeUp .28s ease forwards}
+.shake{animation:shake .3s ease}
+.pop{animation:pop .3s ease}
+
+@media(max-width:480px){
+  .card{padding:22px 14px}
+  .cats{grid-template-columns:repeat(3,1fr)}
+  .res-grid{gap:6px}
+}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<div class="wrap">
+<div class="card" id="cartao">
+
+<!-- ══════════════════════
+     TELA INICIAL
+══════════════════════ -->
+<section class="tela ativa" id="t-inicio">
+  <div class="logo">
+    <div class="logo-tag">// quiz tech challenge</div>
+    <div class="logo-nome">TECH<span>QUIZ</span></div>
+    <div class="logo-sub">Teste seus conhecimentos em tecnologia</div>
+  </div>
+
+  <div class="recorde-bar">
+    <span>🏆 Seu recorde</span>
+    <strong id="recorde-ini">0 pts</strong>
+  </div>
+
+  <p class="sec-titulo">Escolha uma categoria</p>
+  <div class="cats" id="cats-grid"></div>
+
+  <div class="div"></div>
+
+  <button class="btn btn-p" onclick="iniciarJogo()">Iniciar Quiz →</button>
+  <button class="btn btn-s" onclick="irParaRanking()">Ver ranking completo</button>
+</section>
+
+<!-- ══════════════════════
+     TELA QUIZ
+══════════════════════ -->
+<section class="tela" id="t-quiz">
+  <div class="hud">
+    <div class="hud-pill">pontos <span class="val" id="h-pts">0</span></div>
+    <div class="hud-pill lives">vidas <span class="val" id="h-vidas">❤️❤️❤️</span></div>
+    <div class="hud-pill">fase <span class="val" id="h-fase">1/10</span></div>
+  </div>
+
+  <div class="timer-row">
+    <span class="timer-num" id="timer-num">30</span>
+    <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+  </div>
+
+  <div id="cat-badge-wrap"></div>
+
+  <div class="prog-row">
+    <span class="prog-label" id="prog-label">Pergunta 1 de 10</span>
+    <span class="prog-label" id="prog-pct">0%</span>
+  </div>
+  <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <p class="q-texto anima" id="q-texto">Carregando...</p>
+  <div class="opcoes" id="opcoes"></div>
+  <p class="feedback" id="feedback"></p>
+
+  <button class="btn btn-p" id="btn-prox" onclick="proxPergunta()" disabled>
+    Próxima →
+  </button>
+</section>
+
+<!-- ══════════════════════
+     TELA RESULTADO
+══════════════════════ -->
+<section class="tela" id="t-result">
+  <div class="res-icone" id="res-icone">🎉</div>
+  <div class="res-titulo" id="res-titulo">Parabéns!</div>
+  <p class="res-sub" id="res-sub">Você completou o quiz!</p>
+
+  <div class="res-grid">
+    <div class="res-item">
+      <div class="res-val" id="r-pts" style="color:var(--cat)">0</div>
+      <div class="res-lbl">Pontos</div>
+    </div>
+    <div class="res-item">
+      <div class="res-val" id="r-acc" style="color:#22c55e">0</div>
+      <div class="res-lbl">Acertos</div>
+    </div>
+    <div class="res-item">
+      <div class="res-val" id="r-prec" style="color:#a855f7">0%</div>
+      <div class="res-lbl">Precisão</div>
+    </div>
+  </div>
+
+  <div class="rec-novo" id="rec-novo" style="display:none">🏆 Novo recorde! Incrível!</div>
+
+  <div class="nome-wrap">
+    <label for="inp-nome">Seu nome para o ranking:</label>
+    <input type="text" id="inp-nome" placeholder="Digite seu nome..." maxlength="20">
+  </div>
+
+  <button class="btn btn-p" onclick="salvarRanking()">Salvar no Ranking</button>
+  <button class="btn btn-s" onclick="irParaInicio()">Jogar novamente</button>
+</section>
+
+<!-- ══════════════════════
+     TELA RANKING
+══════════════════════ -->
+<section class="tela" id="t-ranking">
+  <div class="rank-tit">// ranking</div>
+  <div class="rank-filtros" id="rank-filtros"></div>
+  <div class="rank-lista" id="rank-lista"></div>
+  <button class="btn btn-p" onclick="irParaInicio()">← Voltar</button>
+  <button class="btn btn-s" onclick="limparRanking()">Limpar ranking</button>
+</section>
+
+</div><!-- /card -->
+</div><!-- /wrap -->
+
+<script>
+/* ════════════════════════════════════
+   CATEGORIAS + PERGUNTAS
+════════════════════════════════════ */
+const CATS = {
+  web: {
+    nome:'Web Dev', icone:'🌐', cor:'#3b82f6',
+    perguntas:[
+      {p:"Qual linguagem cria a estrutura de uma página web?",
+       ops:["CSS","HTML","JavaScript","Python"],r:"HTML"},
+      {p:"O que a propriedade CSS 'display: flex' faz?",
+       ops:["Oculta o elemento","Cria um layout flexível","Define a cor","Adiciona borda"],r:"Cria um layout flexível"},
+      {p:"Qual tag HTML é usada para criar um link?",
+       ops:["<link>","<a>","<href>","<nav>"],r:"<a>"},
+      {p:"O que significa 'responsivo' em web design?",
+       ops:["Carrega rápido","Se adapta a diferentes tamanhos de tela","Tem animações","Usa banco de dados"],r:"Se adapta a diferentes tamanhos de tela"},
+      {p:"Qual método JavaScript seleciona um elemento pelo ID?",
+       ops:["querySelector","getElementById","getElement","selectId"],r:"getElementById"},
+      {p:"O que é o DOM?",
+       ops:["Um banco de dados","Representação em árvore dos elementos HTML","Linguagem de estilo","Protocolo de rede"],r:"Representação em árvore dos elementos HTML"},
+      {p:"Qual operador JavaScript verifica valor E tipo?",
+       ops:["==","=","===","!="],r:"==="},
+      {p:"Qual plataforma publica sites gratuitamente via repositório?",
+       ops:["GitHub Pages","WhatsApp","Notepad","Paint"],r:"GitHub Pages"},
+      {p:"O que é um loop 'for' em JavaScript?",
+       ops:["Uma função","Uma condição","Uma estrutura de repetição","Um evento"],r:"Uma estrutura de repetição"},
+      {p:"Qual extensão têm arquivos de página web?",
+       ops:[".exe",".mp3",".html",".jpg"],r:".html"},
+      {p:"O que faz a propriedade CSS 'position: absolute'?",
+       ops:["Centraliza o elemento","Posiciona em relação ao ancestral mais próximo","Remove o elemento","Adiciona sombra"],r:"Posiciona em relação ao ancestral mais próximo"},
+      {p:"Qual evento JavaScript é disparado ao clicar em um botão?",
+       ops:["onhover","onsubmit","onclick","onload"],r:"onclick"},
+    ]
+  },
+  ia: {
+    nome:'Inteligência Artificial', icone:'🤖', cor:'#a855f7',
+    perguntas:[
+      {p:"O que significa IA?",
+       ops:["Internet Aberta","Inteligência Artificial","Interface Automática","Informação Analógica"],r:"Inteligência Artificial"},
+      {p:"O que é Machine Learning?",
+       ops:["Aprendizado de máquinas a partir de dados","Linguagem de programação","Banco de dados","Sistema operacional"],r:"Aprendizado de máquinas a partir de dados"},
+      {p:"O que são redes neurais artificiais?",
+       ops:["Cabos de internet","Modelos inspirados no cérebro humano","Tipos de banco de dados","Protocolos de rede"],r:"Modelos inspirados no cérebro humano"},
+      {p:"O que é 'overfitting' em IA?",
+       ops:["Modelo muito lento","Modelo que memoriza dados de treino mas generaliza mal","Excesso de dados","Erro de hardware"],r:"Modelo que memoriza dados de treino mas generaliza mal"},
+      {p:"Qual linguagem é mais usada em projetos de IA?",
+       ops:["HTML","CSS","Python","Pascal"],r:"Python"},
+      {p:"O que é um 'dataset'?",
+       ops:["Um algoritmo","Conjunto de dados usado para treinar modelos","Tipo de rede neural","Linguagem de IA"],r:"Conjunto de dados usado para treinar modelos"},
+      {p:"O que significa 'deep learning'?",
+       ops:["Aprendizado com muitas camadas de redes neurais","Aprendizado lento","Banco de dados profundo","IA para jogos"],r:"Aprendizado com muitas camadas de redes neurais"},
+      {p:"Qual empresa criou o ChatGPT?",
+       ops:["Google","Meta","OpenAI","Microsoft"],r:"OpenAI"},
+      {p:"O que é um 'prompt' em IA generativa?",
+       ops:["Um tipo de modelo","Instrução de texto dada à IA","Um banco de dados","Um servidor"],r:"Instrução de texto dada à IA"},
+      {p:"O que é 'processamento de linguagem natural' (PLN/NLP)?",
+       ops:["Tradução automática de código","Campo da IA que lida com texto e fala humana","Banco de dados de palavras","Protocolo de rede"],r:"Campo da IA que lida com texto e fala humana"},
+      {p:"O que é classificação em Machine Learning?",
+       ops:["Ordenar dados","Prever qual categoria um dado pertence","Limpar dados","Visualizar dados"],r:"Prever qual categoria um dado pertence"},
+      {p:"O que é 'bias' (viés) em IA?",
+       ops:["Velocidade do modelo","Tendência sistemática a erros por dados ou projeto","Tipo de rede neural","Custo computacional"],r:"Tendência sistemática a erros por dados ou projeto"},
+    ]
+  },
+  sec: {
+    nome:'Segurança', icone:'🔒', cor:'#ef4444',
+    perguntas:[
+      {p:"O que é um vírus de computador?",
+       ops:["Programa que se replica causando danos","Tipo de hardware","Linguagem de programação","Banco de dados"],r:"Programa que se replica causando danos"},
+      {p:"O que significa HTTPS?",
+       ops:["HyperText Transfer Protocol Secure","High Transfer Protocol System","HyperText Type Protocol Speed","None"],r:"HyperText Transfer Protocol Secure"},
+      {p:"O que é phishing?",
+       ops:["Tipo de vírus","Golpe para roubar dados se passando por entidade confiável","Ataque de hardware","Linguagem de hack"],r:"Golpe para roubar dados se passando por entidade confiável"},
+      {p:"O que é uma senha forte?",
+       ops:["Apenas letras maiúsculas","Apenas números","Combinação de letras, números e símbolos","Seu nome completo"],r:"Combinação de letras, números e símbolos"},
+      {p:"O que é autenticação de dois fatores (2FA)?",
+       ops:["Usar duas senhas iguais","Segunda camada de verificação além da senha","Dois usuários no mesmo computador","Dois antivírus"],r:"Segunda camada de verificação além da senha"},
+      {p:"O que é um firewall?",
+       ops:["Antivírus","Sistema que controla o tráfego de rede","Tipo de vírus","Navegador seguro"],r:"Sistema que controla o tráfego de rede"},
+      {p:"O que é criptografia?",
+       ops:["Apagar dados","Transformar dados em formato ilegível para protegê-los","Copiar arquivos","Compactar pastas"],r:"Transformar dados em formato ilegível para protegê-los"},
+      {p:"O que é SQL Injection?",
+       ops:["Tipo de banco de dados","Ataque que insere código SQL malicioso em formulários","Linguagem de consulta","Plugin de segurança"],r:"Ataque que insere código SQL malicioso em formulários"},
+      {p:"O que é malware?",
+       ops:["Software malicioso","Tipo de hardware","Protocolo de rede","Linguagem de programação"],r:"Software malicioso"},
+      {p:"O que é um ataque DDoS?",
+       ops:["Roubo de senhas","Sobrecarregar um servidor com tráfego falso","Vírus em e-mail","Invasão física"],r:"Sobrecarregar um servidor com tráfego falso"},
+      {p:"O que é engenharia social em segurança?",
+       ops:["Construção de sistemas","Manipular pessoas para obter informações privilegiadas","Programação de redes","Hardware seguro"],r:"Manipular pessoas para obter informações privilegiadas"},
+      {p:"Para que serve um gerenciador de senhas?",
+       ops:["Criar vírus","Armazenar e gerar senhas seguras","Acelerar a internet","Compactar arquivos"],r:"Armazenar e gerar senhas seguras"},
+    ]
+  },
+  hw: {
+    nome:'Hardware', icone:'⚙️', cor:'#f59e0b',
+    perguntas:[
+      {p:"O que é a CPU?",
+       ops:["Memória RAM","Unidade Central de Processamento","Placa de vídeo","HD"],r:"Unidade Central de Processamento"},
+      {p:"O que é RAM?",
+       ops:["Memória de armazenamento permanente","Memória temporária de acesso rápido","Processador","Fonte de energia"],r:"Memória temporária de acesso rápido"},
+      {p:"O que faz a GPU?",
+       ops:["Armazena dados","Processa gráficos e vídeo","Gerencia a rede","Alimenta o computador"],r:"Processa gráficos e vídeo"},
+      {p:"Qual é a função da placa-mãe?",
+       ops:["Gerar energia","Conectar todos os componentes do computador","Armazenar arquivos","Processar vídeo"],r:"Conectar todos os componentes do computador"},
+      {p:"O que é um SSD?",
+       ops:["Tipo de processador","Dispositivo de armazenamento rápido sem partes móveis","Memória RAM","Placa de rede"],r:"Dispositivo de armazenamento rápido sem partes móveis"},
+      {p:"O que significa USB?",
+       ops:["Universal Serial Bus","Ultra Speed Bus","Unified System Board","Unique Storage Block"],r:"Universal Serial Bus"},
+      {p:"O que é a BIOS?",
+       ops:["Sistema operacional","Firmware que inicializa o hardware ao ligar o PC","Tipo de processador","Antivírus"],r:"Firmware que inicializa o hardware ao ligar o PC"},
+      {p:"Qual componente converte energia elétrica para os componentes do PC?",
+       ops:["CPU","RAM","Fonte de alimentação","HD"],r:"Fonte de alimentação"},
+      {p:"O que é Bluetooth?",
+       ops:["Tipo de cabo","Tecnologia sem fio de curto alcance","Tipo de HD","Protocolo de internet"],r:"Tecnologia sem fio de curto alcance"},
+      {p:"O que é um cooler em um computador?",
+       ops:["Memória extra","Sistema de resfriamento","Tipo de fonte","Leitor de cartão"],r:"Sistema de resfriamento"},
+      {p:"Quantos bits tem 1 byte?",
+       ops:["4","16","8","2"],r:"8"},
+      {p:"O que é overclocking?",
+       ops:["Atualizar o sistema","Forçar componentes a funcionar acima da frequência padrão","Limpar vírus","Instalar drivers"],r:"Forçar componentes a funcionar acima da frequência padrão"},
+    ]
+  },
+  bd: {
+    nome:'Banco de Dados', icone:'🗄️', cor:'#10b981',
+    perguntas:[
+      {p:"O que é SQL?",
+       ops:["Linguagem de marcação","Linguagem para gerenciar bancos de dados relacionais","Sistema operacional","Protocolo de rede"],r:"Linguagem para gerenciar bancos de dados relacionais"},
+      {p:"O que faz o comando SQL SELECT?",
+       ops:["Apaga dados","Consulta e retorna dados de uma tabela","Cria tabelas","Atualiza registros"],r:"Consulta e retorna dados de uma tabela"},
+      {p:"O que é uma chave primária (PRIMARY KEY)?",
+       ops:["Senha do banco","Identificador único de cada registro","Nome da tabela","Tipo de coluna"],r:"Identificador único de cada registro"},
+      {p:"O que é um banco de dados NoSQL?",
+       ops:["Banco que não usa tabelas e é mais flexível","Banco sem dados","Banco muito lento","SQL com erros"],r:"Banco que não usa tabelas e é mais flexível"},
+      {p:"O que faz o comando SQL DELETE?",
+       ops:["Apaga a tabela inteira","Remove registros específicos","Atualiza dados","Cria índices"],r:"Remove registros específicos"},
+      {p:"O que é uma JOIN em SQL?",
+       ops:["Criar tabela","Combinar dados de duas ou mais tabelas","Apagar colunas","Ordenar resultados"],r:"Combinar dados de duas ou mais tabelas"},
+      {p:"Qual é um exemplo de banco de dados NoSQL?",
+       ops:["MySQL","PostgreSQL","MongoDB","SQLite"],r:"MongoDB"},
+      {p:"O que é indexação em banco de dados?",
+       ops:["Apagar registros","Estrutura que acelera buscas","Fazer backup","Criptografar dados"],r:"Estrutura que acelera buscas"},
+      {p:"O que é CRUD?",
+       ops:["Tipo de banco","Create, Read, Update, Delete — operações básicas","Linguagem NoSQL","Protocolo de segurança"],r:"Create, Read, Update, Delete — operações básicas"},
+      {p:"O que faz o comando SQL ORDER BY?",
+       ops:["Filtra registros","Ordena os resultados por uma coluna","Agrupa dados","Junta tabelas"],r:"Ordena os resultados por uma coluna"},
+      {p:"O que é uma transação em banco de dados?",
+       ops:["Exportar dados","Sequência de operações tratada como unidade (tudo ou nada)","Tipo de índice","Backup automático"],r:"Sequência de operações tratada como unidade (tudo ou nada)"},
+      {p:"O que é ORM?",
+       ops:["Tipo de SQL","Ferramenta que mapeia objetos do código para tabelas do BD","Banco NoSQL","Protocolo de rede"],r:"Ferramenta que mapeia objetos do código para tabelas do BD"},
+    ]
+  },
+};
+
+/* ════════════════════════════════════
+   CANVAS DE FUNDO — GRADE DE PONTOS
+════════════════════════════════════ */
+(function(){
+  const c=document.getElementById('bg-canvas');
+  const ctx=c.getContext('2d');
+  let W,H,cat='#3b82f6';
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  window.addEventListener('resize',resize);resize();
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const sp=40;
+    for(let x=0;x<W;x+=sp){
+      for(let y=0;y<H;y+=sp){
+        ctx.beginPath();
+        ctx.arc(x,y,1,0,Math.PI*2);
+        ctx.fillStyle=cat;
+        ctx.globalAlpha=.5;
+        ctx.fill();
+      }
+    }
+  }
+  draw();
+  window.setBgColor=function(c2){cat=c2;draw()};
+})();
+
+/* ════════════════════════════════════
+   SOM — Web Audio API
+════════════════════════════════════ */
+let _actx=null;
+function getCtx(){return _actx||(_actx=new(window.AudioContext||window.webkitAudioContext)())}
+function som(tipo){
+  try{
+    const a=getCtx(),o=a.createOscillator(),g=a.createGain();
+    o.connect(g);g.connect(a.destination);
+    const t=a.currentTime;
+    if(tipo==='ok'){
+      o.frequency.setValueAtTime(523,t);
+      o.frequency.setValueAtTime(784,t+.12);
+      g.gain.setValueAtTime(.25,t);
+      g.gain.exponentialRampToValueAtTime(.001,t+.4);
+      o.start(t);o.stop(t+.4);
+    }else if(tipo==='fail'){
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(220,t);
+      o.frequency.setValueAtTime(140,t+.15);
+      g.gain.setValueAtTime(.2,t);
+      g.gain.exponentialRampToValueAtTime(.001,t+.35);
+      o.start(t);o.stop(t+.35);
+    }else if(tipo==='win'){
+      [523,659,784,1047].forEach((f,i)=>{
+        const o2=a.createOscillator(),g2=a.createGain();
+        o2.connect(g2);g2.connect(a.destination);
+        o2.frequency.value=f;
+        g2.gain.setValueAtTime(.2,t+i*.12);
+        g2.gain.exponentialRampToValueAtTime(.001,t+i*.12+.35);
+        o2.start(t+i*.12);o2.stop(t+i*.12+.35);
+      });
+    }else if(tipo==='lose'){
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(280,t);
+      o.frequency.exponentialRampToValueAtTime(70,t+.7);
+      g.gain.setValueAtTime(.25,t);
+      g.gain.exponentialRampToValueAtTime(.001,t+.7);
+      o.start(t);o.stop(t+.7);
+    }else if(tipo==='tick'){
+      o.frequency.value=900;
+      g.gain.setValueAtTime(.04,t);
+      g.gain.exponentialRampToValueAtTime(.001,t+.07);
+      o.start(t);o.stop(t+.07);
+    }
+  }catch(e){}
+}
+
+/* ════════════════════════════════════
+   ESTADO
+════════════════════════════════════ */
+let catAtual='web';
+let perguntas=[];
+let idx=0,pts=0,vidas=3,acertos=0;
+let respondeu=false;
+let timerID=null,tempoRestante=0;
+const TEMPO_POR_PERGUNTA=20;
+
+/* ════════════════════════════════════
+   TELAS
+════════════════════════════════════ */
+function irPara(id){
+  document.querySelectorAll('.tela').forEach(t=>t.classList.remove('ativa'));
+  document.getElementById(id).classList.add('ativa');
+}
+function irParaInicio(){pararTimer();irPara('t-inicio');atualizarRecordeInicio()}
+function irParaRanking(){renderRanking();irPara('t-ranking')}
+
+/* ════════════════════════════════════
+   RENDER CATEGORIAS
+════════════════════════════════════ */
+function renderCats(){
+  const g=document.getElementById('cats-grid');
+  g.innerHTML='';
+  Object.entries(CATS).forEach(([k,v])=>{
+    const b=document.createElement('button');
+    b.className='cat-btn'+(k===catAtual?' sel':'');
+    b.style.setProperty('--cor',v.cor);
+    b.innerHTML=`<span class="cat-icone">${v.icone}</span>
+      <span class="cat-nome">${v.nome.split(' ')[0]}</span>
+      <span class="cat-qtd">${v.perguntas.length} pergs</span>`;
+    b.onclick=()=>selecionarCat(k,b);
+    g.appendChild(b);
+  });
+}
+function selecionarCat(k,btn){
+  catAtual=k;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  aplicarCor(CATS[k].cor);
+}
+
+/* ════════════════════════════════════
+   COR DINÂMICA
+════════════════════════════════════ */
+function aplicarCor(cor){
+  document.documentElement.style.setProperty('--cat',cor);
+  window.setBgColor&&window.setBgColor(cor);
+}
+
+/* ════════════════════════════════════
+   INICIAR JOGO
+════════════════════════════════════ */
+function iniciarJogo(){
+  const c=CATS[catAtual];
+  aplicarCor(c.cor);
+  pts=0;vidas=3;acertos=0;idx=0;
+  // embaralha e pega 10
+  perguntas=[...c.perguntas].sort(()=>Math.random()-.5).slice(0,10);
+  // badge
+  document.getElementById('cat-badge-wrap').innerHTML=
+    `<div class="cat-badge">${c.icone} ${c.nome}</div>`;
+  irPara('t-quiz');
+  carregarPergunta();
+}
+
+/* ════════════════════════════════════
+   CARREGAR PERGUNTA
+════════════════════════════════════ */
+function carregarPergunta(){
+  respondeu=false;
+  document.getElementById('feedback').textContent='';
+  document.getElementById('btn-prox').disabled=true;
+
+  const total=perguntas.length;
+  const pct=Math.round((idx/total)*100);
+  document.getElementById('prog-label').textContent=`Pergunta ${idx+1} de ${total}`;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('h-fase').textContent=`${idx+1}/${total}`;
+  document.getElementById('h-pts').textContent=pts;
+
+  const letras=['A','B','C','D'];
+  const pq=perguntas[idx];
+  const qEl=document.getElementById('q-texto');
+  qEl.textContent=pq.p;
+  qEl.classList.remove('anima');void qEl.offsetWidth;qEl.classList.add('anima');
+
+  const ops=[...pq.ops].sort(()=>Math.random()-.5);
+  const opDiv=document.getElementById('opcoes');
+  opDiv.innerHTML='';
+  ops.forEach((op,i)=>{
+    const b=document.createElement('button');
+    b.className='op-btn';
+    b.innerHTML=`<span class="k">${letras[i]}</span>${op}`;
+    b.onclick=()=>verificar(b,op,pq.r);
+    opDiv.appendChild(b);
+  });
+
+  atualizarVidas();
+  iniciarTimer();
+}
+
+/* ════════════════════════════════════
+   TIMER
+════════════════════════════════════ */
+function iniciarTimer(){
+  pararTimer();
+  tempoRestante=TEMPO_POR_PERGUNTA;
+  atualizarTimerUI();
+  timerID=setInterval(()=>{
+    tempoRestante--;
+    atualizarTimerUI();
+    if(tempoRestante<=5&&tempoRestante>0)som('tick');
+    if(tempoRestante<=0){pararTimer();semTempo();}
+  },1000);
+}
+function pararTimer(){if(timerID){clearInterval(timerID);timerID=null;}}
+function atualizarTimerUI(){
+  const n=document.getElementById('timer-num');
+  const f=document.getElementById('timer-fill');
+  const pct=(tempoRestante/TEMPO_POR_PERGUNTA)*100;
+  n.textContent=tempoRestante;
+  n.className='timer-num'+(tempoRestante<=5?' urgent':'');
+  f.style.width=pct+'%';
+  f.className='timer-fill'+(tempoRestante<=5?' urgent':'');
+}
+function semTempo(){
+  if(respondeu)return;
+  respondeu=true;
+  // marca resposta certa
+  document.querySelectorAll('.op-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent.includes(perguntas[idx].r))b.classList.add('ok');
+  });
+  vidas--;atualizarVidas();
+  const fb=document.getElementById('feedback');
+  fb.textContent='⏰ Tempo esgotado! Perdeu uma vida.';
+  fb.style.color='#ef4444';
+  som('fail');
+  sacudir();
+  if(vidas<=0)setTimeout(finalizarJogo,900);
+  else document.getElementById('btn-prox').disabled=false;
+}
+
+/* ════════════════════════════════════
+   VERIFICAR RESPOSTA
+════════════════════════════════════ */
+function verificar(botao,op,resp){
+  if(respondeu)return;
+  respondeu=true;pararTimer();
+  document.querySelectorAll('.op-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent.includes(resp))b.classList.add('ok');
+  });
+  const fb=document.getElementById('feedback');
+  if(op===resp){
+    const bonus=Math.ceil(tempoRestante*1.5);
+    const ganho=10+bonus;
+    pts+=ganho;acertos++;
+    fb.textContent=`✅ Certo! +${ganho} pts (bônus de velocidade)`;
+    fb.style.color='#22c55e';
+    som('ok');
+    pulsar();
+  }else{
+    botao.classList.add('fail');
+    vidas--;
+    fb.textContent=`❌ Errado! Resposta: ${resp}`;
+    fb.style.color='#ef4444';
+    som('fail');sacudir();
+  }
+  document.getElementById('h-pts').textContent=pts;
+  atualizarVidas();
+  if(vidas<=0)setTimeout(finalizarJogo,900);
+  else document.getElementById('btn-prox').disabled=false;
+}
+
+function atualizarVidas(){
+  document.getElementById('h-vidas').textContent='❤️'.repeat(Math.max(0,vidas))||'💔';
+}
+function sacudir(){
+  const c=document.getElementById('cartao');
+  c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake');
+}
+function pulsar(){
+  const c=document.getElementById('cartao');
+  c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');
+}
+
+/* ════════════════════════════════════
+   PRÓXIMA / FIM
+════════════════════════════════════ */
+function proxPergunta(){
+  idx++;
+  if(idx>=perguntas.length)finalizarJogo();
+  else carregarPergunta();
+}
+
+function finalizarJogo(){
+  pararTimer();
+  const total=perguntas.length;
+  const morreu=vidas<=0;
+  const prec=Math.round((acertos/total)*100);
+
+  document.getElementById('res-icone').textContent=morreu?'💔':acertos===total?'🏆':'⭐';
+  document.getElementById('res-titulo').textContent=morreu?'Game Over!':acertos===total?'Perfeito!':'Bom jogo!';
+  document.getElementById('res-sub').textContent=morreu
+    ?'Você perdeu todas as vidas. Tente de novo!'
+    :`${acertos} de ${total} perguntas corretas`;
+
+  document.getElementById('r-pts').textContent=pts;
+  document.getElementById('r-acc').textContent=`${acertos}/${total}`;
+  document.getElementById('r-prec').textContent=`${prec}%`;
+
+  const rec=parseInt(localStorage.getItem('quizRec')||'0');
+  const recEl=document.getElementById('rec-novo');
+  if(pts>rec){localStorage.setItem('quizRec',pts);recEl.style.display='flex';som('win');}
+  else{recEl.style.display='none';if(morreu)som('lose');else som('win');}
+
+  irPara('t-result');
+}
+
+/* ════════════════════════════════════
+   RANKING
+════════════════════════════════════ */
+let filtroRanking='todos';
+
+function salvarRanking(){
+  const nome=document.getElementById('inp-nome').value.trim()||'Anônimo';
+  const lista=JSON.parse(localStorage.getItem('quizRanking')||'[]');
+  lista.push({nome,pts,acertos,total:perguntas.length,
+    cat:catAtual,catNome:CATS[catAtual].nome,
+    catIcone:CATS[catAtual].icone,
+    data:new Date().toLocaleDateString('pt-BR')});
+  lista.sort((a,b)=>b.pts-a.pts);
+  localStorage.setItem('quizRanking',JSON.stringify(lista.slice(0,20)));
+  irParaRanking();
+}
+
+function renderRanking(){
+  // filtros
+  const filtros=document.getElementById('rank-filtros');
+  const opcoes=[{k:'todos',label:'Todos'},...Object.entries(CATS).map(([k,v])=>({k,label:v.icone+' '+v.nome.split(' ')[0]}))];
+  filtros.innerHTML=opcoes.map(o=>
+    `<button class="filtro-btn${filtroRanking===o.k?' ativo':''}" onclick="mudarFiltro('${o.k}')">${o.label}</button>`
+  ).join('');
+
+  const lista=JSON.parse(localStorage.getItem('quizRanking')||'[]');
+  const filtrada=filtroRanking==='todos'?lista:lista.filter(r=>r.cat===filtroRanking);
+  const el=document.getElementById('rank-lista');
+  if(!filtrada.length){el.innerHTML='<div class="rank-vazio">Ainda sem entradas aqui.<br>Jogue para aparecer! 🎮</div>';return;}
+  const posClass=['g','s','b'];
+  const medalhas=['🥇','🥈','🥉'];
+  el.innerHTML=filtrada.slice(0,10).map((r,i)=>`
+    <div class="rank-item">
+      <div class="rank-pos ${posClass[i]||''}">${medalhas[i]||(i+1)}</div>
+      <div class="rank-info">
+        <div class="rank-nome">${r.nome} <span style="opacity:.5">${r.catIcone||''}</span></div>
+        <div class="rank-det">${r.catNome||''} · ${r.acertos}/${r.total} acertos · ${r.data}</div>
+      </div>
+      <div class="rank-pts" style="color:${CATS[r.cat]?.cor||'var(--cat)'}">${r.pts}</div>
+    </div>`).join('');
+}
+
+function mudarFiltro(k){filtroRanking=k;renderRanking()}
+
+function limparRanking(){
+  if(confirm('Limpar todo o ranking?')){
+    localStorage.removeItem('quizRanking');
+    renderRanking();
+  }
+}
+
+function atualizarRecordeInicio(){
+  const r=parseInt(localStorage.getItem('quizRec')||'0');
+  document.getElementById('recorde-ini').textContent=r+' pts';
+}
+
+/* ════════════════════════════════════
+   INICIALIZAÇÃO
+════════════════════════════════════ */
+renderCats();
+atualizarRecordeInicio();
+aplicarCor(CATS[catAtual].cor);
+</script>
+</body>
+</html>
