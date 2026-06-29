@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Tech Challenge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #0f172a;
+      --navy2:   #1e293b;
+      --navy3:   #334155;
+      --blue:    #3b82f6;
+      --blue2:   #60a5fa;
+      --cyan:    #06b6d4;
+      --green:   #22d3ee;
+      --red:     #f43f5e;
+      --yellow:  #fbbf24;
+      --white:   #f1f5f9;
+      --muted:   #94a3b8;
+      --card-bg: rgba(30, 41, 59, 0.85);
+      --radius:  16px;
+      --transition: 0.2s ease;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--navy);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    /* ===== STARFIELD ===== */
+    #stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: white;
+      animation: twinkle var(--dur, 3s) infinite alternate;
+      opacity: 0;
+    }
+    @keyframes twinkle { from { opacity: 0.1; } to { opacity: 0.7; } }
+
+    /* ===== CARD ===== */
+    .card {
+      position: relative;
+      z-index: 1;
+      background: var(--card-bg);
+      border: 1px solid rgba(99, 179, 237, 0.18);
+      border-radius: 24px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 640px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 0 60px rgba(59, 130, 246, 0.12), 0 24px 48px rgba(0,0,0,0.4);
+    }
+
+    /* ===== LOGO ===== */
+    .logo {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .logo-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      background: linear-gradient(135deg, #60a5fa, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+    .logo-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; }
+    .screen.ativo { display: block; }
+
+    /* ===== TELA INICIAL ===== */
+    #tela-inicio .record-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(251,191,36,0.12);
+      border: 1px solid rgba(251,191,36,0.25);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin: 20px 0;
+      font-size: 0.9rem;
+      color: var(--yellow);
+    }
+    .record-banner span { font-weight: 600; }
+
+    .dificuldade-titulo {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .dificuldade-opcoes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .btn-nivel {
+      background: var(--navy2);
+      border: 2px solid var(--navy3);
+      border-radius: 12px;
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-nivel .nivel-icone { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+    .btn-nivel .nivel-nome { font-size: 0.85rem; font-weight: 600; }
+    .btn-nivel .nivel-desc { font-size: 0.72rem; display: block; margin-top: 2px; opacity: 0.7; }
+    .btn-nivel:hover { border-color: var(--blue); color: var(--blue2); }
+    .btn-nivel.selecionado { border-color: var(--blue); background: rgba(59,130,246,0.15); color: var(--blue2); }
+
+    /* ===== BOTÕES PRINCIPAIS ===== */
+    .btn-primario {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #2563eb, #0891b2);
+      border: none;
+      border-radius: 14px;
+      color: white;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: var(--transition);
+      font-family: 'Inter', sans-serif;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primario:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    .btn-primario:active { transform: translateY(0); }
+    .btn-primario:disabled { background: var(--navy3); cursor: not-allowed; filter: none; transform: none; }
+
+    .btn-secundario {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      background: transparent;
+      border: 2px solid var(--navy3);
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: var(--transition);
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-secundario:hover { border-color: var(--blue); color: var(--blue2); }
+
+    /* ===== HUD (durante o quiz) ===== */
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--navy2);
+      border: 1px solid var(--navy3);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin-bottom: 18px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .hud-item { display: flex; flex-direction: column; align-items: center; min-width: 56px; }
+    .hud-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 2px; }
+    .hud-valor { font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--white); }
+    .hud-vidas { font-size: 1rem; }
+
+    /* ===== CRONÔMETRO ===== */
+    .cronometro-barra-wrap {
+      margin-bottom: 18px;
+    }
+    .cronometro-barra {
+      height: 5px;
+      background: var(--navy3);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .cronometro-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #06b6d4, #3b82f6);
+      transition: width 0.95s linear, background 0.3s;
+    }
+    .cronometro-fill.urgente { background: linear-gradient(90deg, #f43f5e, #fbbf24); }
+
+    /* ===== BADGE DE DIFICULDADE ===== */
+    .badge-nivel {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 99px;
+      margin-bottom: 12px;
+    }
+    .badge-facil   { background: rgba(34,211,238,0.15); color: #22d3ee; border: 1px solid rgba(34,211,238,0.3); }
+    .badge-medio   { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+    .badge-dificil { background: rgba(244,63,94,0.15);  color: #f43f5e; border: 1px solid rgba(244,63,94,0.3); }
+
+    /* ===== PROGRESSO ===== */
+    .progresso-texto {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: right;
+      margin-bottom: 6px;
+    }
+    .progresso-barra {
+      height: 4px;
+      background: var(--navy3);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .progresso-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      transition: width 0.4s ease;
+    }
+
+    /* ===== PERGUNTA ===== */
+    .pergunta-texto {
+      font-size: 1.15rem;
+      font-weight: 500;
+      line-height: 1.55;
+      margin-bottom: 20px;
+      min-height: 52px;
+    }
+
+    /* ===== OPÇÕES ===== */
+    .opcoes { display: grid; gap: 10px; margin-bottom: 18px; }
+    .btn-opcao {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--navy2);
+      border: 2px solid var(--navy3);
+      border-radius: 13px;
+      color: var(--white);
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-opcao .letra {
+      width: 26px; height: 26px; border-radius: 8px;
+      background: var(--navy3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+      font-family: 'Rajdhani', sans-serif; letter-spacing: 0.05em;
+      transition: var(--transition);
+    }
+    .btn-opcao:not(:disabled):hover { border-color: var(--blue); background: rgba(59,130,246,0.1); }
+    .btn-opcao:not(:disabled):hover .letra { background: var(--blue); color: white; }
+    .btn-opcao:disabled { cursor: not-allowed; opacity: 0.75; }
+    .btn-opcao.correta { border-color: #22d3ee; background: rgba(34,211,238,0.12); color: #22d3ee; }
+    .btn-opcao.correta .letra { background: #22d3ee; color: #0f172a; }
+    .btn-opcao.errada  { border-color: #f43f5e; background: rgba(244,63,94,0.12);  color: #f43f5e; }
+    .btn-opcao.errada  .letra { background: #f43f5e; color: white; }
+
+    /* ===== MENSAGEM DE FEEDBACK ===== */
+    .mensagem-feedback {
+      min-height: 24px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    /* ===== TELA DE RESULTADO ===== */
+    .resultado-icone { font-size: 3.5rem; text-align: center; margin-bottom: 8px; }
+    .resultado-titulo {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .resultado-sub { text-align: center; color: var(--muted); font-size: 0.88rem; margin-bottom: 20px; }
+
+    .placar-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .placar-item {
+      background: var(--navy2);
+      border: 1px solid var(--navy3);
+      border-radius: 13px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .placar-valor {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+    .placar-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-top: 2px; }
+    .placar-recorde {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: rgba(251,191,36,0.12);
+      border: 1px solid rgba(251,191,36,0.25);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 20px;
+      font-size: 0.88rem;
+      color: var(--yellow);
+    }
+
+    /* ===== RANKING ===== */
+    #tela-ranking .ranking-titulo {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .ranking-lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .ranking-item {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--navy2);
+      border: 1px solid var(--navy3);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .ranking-item.destaque { border-color: var(--yellow); background: rgba(251,191,36,0.08); }
+    .ranking-pos {
+      font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; font-weight: 700;
+      min-width: 28px; text-align: center; color: var(--muted);
+    }
+    .ranking-pos.ouro   { color: #fbbf24; }
+    .ranking-pos.prata  { color: #94a3b8; }
+    .ranking-pos.bronze { color: #b45309; }
+    .ranking-info { flex: 1; }
+    .ranking-nome { font-weight: 600; font-size: 0.92rem; }
+    .ranking-detalhe { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .ranking-pts {
+      font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700;
+      color: var(--blue2);
+    }
+    .ranking-vazio { text-align: center; color: var(--muted); padding: 24px; font-size: 0.9rem; }
+
+    /* ===== NOME INPUT ===== */
+    .nome-wrap { margin: 16px 0 20px; }
+    .nome-wrap label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; }
+    .nome-wrap input {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--navy2);
+      border: 2px solid var(--navy3);
+      border-radius: 12px;
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      transition: var(--transition);
+    }
+    .nome-wrap input:focus { border-color: var(--blue); }
+    .nome-wrap input::placeholder { color: var(--navy3); }
+
+    /* ===== ANIMAÇÕES ===== */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .anima { animation: fadeIn 0.3s ease forwards; }
+    @keyframes pulseGreen { 0%,100% { box-shadow: 0 0 0 0 rgba(34,211,238,0); } 50% { box-shadow: 0 0 0 8px rgba(34,211,238,0.15); } }
+    @keyframes pulseRed   { 0%,100% { box-shadow: 0 0 0 0 rgba(244,63,94,0); }  50% { box-shadow: 0 0 0 8px rgba(244,63,94,0.15); } }
+    .pulso-certo { animation: pulseGreen 0.5s ease; }
+    .pulso-erro  { animation: pulseRed 0.5s ease; }
+
+    /* ===== DIVIDER ===== */
+    .divider { height: 1px; background: var(--navy3); margin: 20px 0; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 480px) {
+      .card { padding: 24px 16px; }
+      .logo-title { font-size: 1.8rem; }
+      .dificuldade-opcoes { gap: 7px; }
+      .placar-grid { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Starfield -->
+<div id="stars"></div>
+
+<div class="card" id="cartao-principal">
+
+  <!-- ======= TELA INICIAL ======= -->
+  <section class="screen ativo" id="tela-inicio">
+    <div class="logo">
+      <div class="logo-title">⚡ QUIZ TECH</div>
+      <p class="logo-sub">Teste seus conhecimentos em tecnologia!</p>
+    </div>
+
+    <div class="record-banner" id="banner-recorde">
+      🏆 Seu recorde: <span id="valor-recorde-inicio">0 pts</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="dificuldade-titulo">Escolha o nível de dificuldade</p>
+    <div class="dificuldade-opcoes">
+      <button class="btn-nivel selecionado" data-nivel="facil" onclick="selecionarNivel('facil', this)">
+        <span class="nivel-icone">🌱</span>
+        <span class="nivel-nome">Fácil</span>
+        <span class="nivel-desc">5 vidas · 25s</span>
+      </button>
+      <button class="btn-nivel" data-nivel="medio" onclick="selecionarNivel('medio', this)">
+        <span class="nivel-icone">🔥</span>
+        <span class="nivel-nome">Médio</span>
+        <span class="nivel-desc">3 vidas · 18s</span>
+      </button>
+      <button class="btn-nivel" data-nivel="dificil" onclick="selecionarNivel('dificil', this)">
+        <span class="nivel-icone">💀</span>
+        <span class="nivel-nome">Difícil</span>
+        <span class="nivel-desc">1 vida · 12s</span>
+      </button>
+    </div>
+
+    <button class="btn-primario" onclick="iniciarJogo()">Começar Quiz →</button>
+    <button class="btn-secundario" onclick="mostrarTela('tela-ranking')">🏆 Ver Ranking</button>
+  </section>
+
+  <!-- ======= TELA DO QUIZ ======= -->
+  <section class="screen" id="tela-quiz">
+    <div class="hud">
+      <div class="hud-item">
+        <span class="hud-label">Pontos</span>
+        <span class="hud-valor" id="hud-pontos">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Vidas</span>
+        <span class="hud-valor hud-vidas" id="hud-vidas">❤️❤️❤️</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Tempo</span>
+        <span class="hud-valor" id="hud-tempo">--</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Fase</span>
+        <span class="hud-valor" id="hud-fase">1/10</span>
+      </div>
+    </div>
+
+    <div class="cronometro-barra-wrap">
+      <div class="cronometro-barra">
+        <div class="cronometro-fill" id="cronometro-fill"></div>
+      </div>
+    </div>
+
+    <div id="badge-nivel-quiz"></div>
+
+    <p class="progresso-texto" id="progresso-texto">Pergunta 1 de 10</p>
+    <div class="progresso-barra">
+      <div class="progresso-fill" id="progresso-fill" style="width:0%"></div>
+    </div>
+
+    <p class="pergunta-texto anima" id="pergunta-texto">Carregando...</p>
+    <div class="opcoes" id="opcoes"></div>
+    <p class="mensagem-feedback" id="mensagem-feedback"></p>
+
+    <button class="btn-primario" id="btn-proxima" onclick="proximaPergunta()" disabled>
+      Próxima pergunta →
+    </button>
+  </section>
+
+  <!-- ======= TELA DE RESULTADO ======= -->
+  <section class="screen" id="tela-resultado">
+    <div class="resultado-icone" id="resultado-icone">🎉</div>
+    <h2 class="resultado-titulo" id="resultado-titulo">Parabéns!</h2>
+    <p class="resultado-sub" id="resultado-sub">Você completou o quiz!</p>
+
+    <div class="placar-grid">
+      <div class="placar-item">
+        <div class="placar-valor" id="resultado-pontos" style="color:#60a5fa">0</div>
+        <div class="placar-label">Pontos</div>
+      </div>
+      <div class="placar-item">
+        <div class="placar-valor" id="resultado-acertos" style="color:#22d3ee">0</div>
+        <div class="placar-label">Acertos</div>
+      </div>
+      <div class="placar-item">
+        <div class="placar-valor" id="resultado-precisao" style="color:#a78bfa">0%</div>
+        <div class="placar-label">Precisão</div>
+      </div>
+    </div>
+
+    <div class="placar-recorde" id="placar-recorde" style="display:none">
+      🏆 Novo recorde pessoal! Parabéns!
+    </div>
+
+    <div class="nome-wrap">
+      <label for="input-nome">Seu nome para o ranking:</label>
+      <input type="text" id="input-nome" placeholder="Digite seu nome..." maxlength="20">
+    </div>
+
+    <button class="btn-primario" onclick="salvarEIrParaRanking()">Salvar no Ranking 🏆</button>
+    <button class="btn-secundario" onclick="mostrarTela('tela-inicio')">Jogar novamente</button>
+  </section>
+
+  <!-- ======= TELA DO RANKING ======= -->
+  <section class="screen" id="tela-ranking">
+    <div class="ranking-titulo">🏆 Ranking</div>
+    <div class="ranking-lista" id="ranking-lista"></div>
+    <button class="btn-primario" onclick="mostrarTela('tela-inicio')">← Voltar ao Início</button>
+    <button class="btn-secundario" onclick="limparRanking()">Limpar ranking</button>
+  </section>
+
+</div>
+
+<!-- Sons via Web Audio API -->
+<script>
+/* ===========================
+   CONFIGURAÇÕES DO JOGO
+=========================== */
+const NIVEIS = {
+  facil:   { vidas: 5, tempo: 25, multiplicador: 1,   label: 'Fácil',  badge: 'badge-facil'   },
+  medio:   { vidas: 3, tempo: 18, multiplicador: 1.5, label: 'Médio',  badge: 'badge-medio'   },
+  dificil: { vidas: 1, tempo: 12, multiplicador: 2,   label: 'Difícil',badge: 'badge-dificil' },
+};
+
+// BANCO DE PERGUNTAS
+const BANCO = {
+  facil: [
+    { pergunta: "Qual linguagem cria a estrutura de uma página web?",
+      opcoes: ["CSS","HTML","JavaScript","Python"], resposta: "HTML" },
+    { pergunta: "O que CSS faz em um site?",
+      opcoes: ["Adiciona interatividade","Estiliza visualmente","Armazena dados","Faz requisições"], resposta: "Estiliza visualmente" },
+    { pergunta: "Qual tecla salva um arquivo na maioria dos programas?",
+      opcoes: ["Ctrl+Z","Ctrl+S","Ctrl+P","Ctrl+V"], resposta: "Ctrl+S" },
+    { pergunta: "O que significa WWW?",
+      opcoes: ["World Wide Web","World Work Web","Wide World Web","Web World Wide"], resposta: "World Wide Web" },
+    { pergunta: "Qual plataforma publica sites gratuitamente via repositórios?",
+      opcoes: ["GitHub Pages","WhatsApp","Word","Paint"], resposta: "GitHub Pages" },
+    { pergunta: "O que significa IA?",
+      opcoes: ["Internet Aberta","Inteligência Artificial","Interface Automática","Informação Analógica"], resposta: "Inteligência Artificial" },
+    { pergunta: "Qual extensão tem um arquivo de página web?",
+      opcoes: [".exe",".mp3",".html",".jpg"], resposta: ".html" },
+    { pergunta: "O que é um navegador (browser)?",
+      opcoes: ["Editor de texto","Programa para acessar a internet","Antivírus","Sistema operacional"], resposta: "Programa para acessar a internet" },
+    { pergunta: "Qual símbolo é usado para comentários em JavaScript?",
+      opcoes: ["//","##","**","--"], resposta: "//" },
+    { pergunta: "Qual empresa criou o sistema Android?",
+      opcoes: ["Apple","Microsoft","Google","Samsung"], resposta: "Google" },
+  ],
+  medio: [
+    { pergunta: "Qual linguagem adiciona interatividade a uma página web?",
+      opcoes: ["JavaScript","HTML","SQL","Excel"], resposta: "JavaScript" },
+    { pergunta: "O que é um algoritmo?",
+      opcoes: ["Um tipo de vírus","Passo a passo para resolver um problema","Uma linguagem de programação","Um banco de dados"], resposta: "Passo a passo para resolver um problema" },
+    { pergunta: "O que significa HTTP?",
+      opcoes: ["HyperText Transfer Protocol","HighSpeed Text Transfer Protocol","HyperText Type Protocol","High Transfer Text Protocol"], resposta: "HyperText Transfer Protocol" },
+    { pergunta: "Qual estrutura de dados funciona como 'fila' (FIFO)?",
+      opcoes: ["Pilha (Stack)","Fila (Queue)","Árvore","Grafo"], resposta: "Fila (Queue)" },
+    { pergunta: "O que é um loop 'for' em programação?",
+      opcoes: ["Uma condição","Uma repetição","Uma função","Uma variável"], resposta: "Uma repetição" },
+    { pergunta: "O que é Git?",
+      opcoes: ["Um sistema operacional","Sistema de controle de versão","Banco de dados","Editor de código"], resposta: "Sistema de controle de versão" },
+    { pergunta: "Qual tag HTML cria um link?",
+      opcoes: ["<link>","<href>","<a>","<url>"], resposta: "<a>" },
+    { pergunta: "O que significa CPU?",
+      opcoes: ["Central Processing Unit","Computer Personal Unit","Central Program Utility","Computer Processing Utility"], resposta: "Central Processing Unit" },
+    { pergunta: "Qual operador lógico representa E em JavaScript?",
+      opcoes: ["||","&&","!","=="], resposta: "&&" },
+    { pergunta: "O que é um banco de dados relacional?",
+      opcoes: ["Armazena dados em tabelas relacionadas","Armazena apenas imagens","É um tipo de linguagem","Serve para criar animações"], resposta: "Armazena dados em tabelas relacionadas" },
+  ],
+  dificil: [
+    { pergunta: "O que é Big O Notation?",
+      opcoes: ["Notação para descrever performance de algoritmos","Notação musical","Tipo de banco de dados","Protocolo de rede"], resposta: "Notação para descrever performance de algoritmos" },
+    { pergunta: "Qual protocolo é mais seguro?",
+      opcoes: ["HTTP","FTP","HTTPS","SMTP"], resposta: "HTTPS" },
+    { pergunta: "O que é uma API REST?",
+      opcoes: ["Linguagem de programação","Interface que usa HTTP para comunicação entre sistemas","Banco de dados","Sistema operacional"], resposta: "Interface que usa HTTP para comunicação entre sistemas" },
+    { pergunta: "O que faz o comando 'git commit -m'?",
+      opcoes: ["Apaga arquivos","Salva alterações com uma mensagem","Baixa repositório","Cria branch"], resposta: "Salva alterações com uma mensagem" },
+    { pergunta: "O que é recursão em programação?",
+      opcoes: ["Loop infinito","Função que chama a si mesma","Array multidimensional","Padrão de design"], resposta: "Função que chama a si mesma" },
+    { pergunta: "Qual a diferença entre '==' e '===' no JavaScript?",
+      opcoes: ["Nenhuma","=== compara valor e tipo; == apenas valor","== compara tipo; === apenas valor","=== é mais lento"], resposta: "=== compara valor e tipo; == apenas valor" },
+    { pergunta: "O que é uma promise em JavaScript?",
+      opcoes: ["Objeto que representa conclusão ou falha de operação assíncrona","Tipo de variável","Laço de repetição","Método de array"], resposta: "Objeto que representa conclusão ou falha de operação assíncrona" },
+    { pergunta: "O que é SQL?",
+      opcoes: ["Linguagem de marcação","Linguagem para gerenciar bancos de dados relacionais","Linguagem de estilo","Sistema operacional"], resposta: "Linguagem para gerenciar bancos de dados relacionais" },
+    { pergunta: "Qual é a complexidade do algoritmo de busca binária?",
+      opcoes: ["O(n)","O(n²)","O(log n)","O(1)"], resposta: "O(log n)" },
+    { pergunta: "O que é o conceito de encapsulamento na POO?",
+      opcoes: ["Esconder os detalhes internos e expor apenas o necessário","Herdar propriedades","Chamar funções remotamente","Alocar memória"], resposta: "Esconder os detalhes internos e expor apenas o necessário" },
+  ],
+};
+
+/* ===========================
+   ESTADO DO JOGO
+=========================== */
+let nivelAtual = 'facil';
+let perguntasDoJogo = [];
+let indice = 0;
+let pontos = 0;
+let vidas = 3;
+let acertos = 0;
+let respondeu = false;
+let timerID = null;
+let tempoRestante = 0;
+let tempoTotal = 0;
+
+/* ===========================
+   SONS (Web Audio API)
+=========================== */
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function tocarSom(tipo) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    if (tipo === 'certo') {
+      osc.frequency.setValueAtTime(523, ctx.currentTime);
+      osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    } else if (tipo === 'erro') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, ctx.currentTime);
+      osc.frequency.setValueAtTime(150, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    } else if (tipo === 'vitoria') {
+      const notas = [523,659,784,1047];
+      notas.forEach((freq, i) => {
+        const o2 = ctx.createOscillator();
+        const g2 = ctx.createGain();
+        o2.connect(g2); g2.connect(ctx.destination);
+        o2.frequency.value = freq;
+        g2.gain.setValueAtTime(0.25, ctx.currentTime + i*0.12);
+        g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.12 + 0.4);
+        o2.start(ctx.currentTime + i*0.12);
+        o2.stop(ctx.currentTime + i*0.12 + 0.4);
+      });
+    } else if (tipo === 'derrota') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.6);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.6);
+    } else if (tipo === 'tick') {
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.08);
+    }
+  } catch(e) {}
+}
+
+/* ===========================
+   ESTRELAS
+=========================== */
+(function criarEstrelas() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%; top:${Math.random()*100}%;
+      --dur:${(Math.random()*4+2).toFixed(1)}s;
+      animation-delay:${(Math.random()*4).toFixed(1)}s;
+    `;
+    container.appendChild(s);
+  }
+})();
+
+/* ===========================
+   NAVEGAÇÃO ENTRE TELAS
+=========================== */
+function mostrarTela(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('ativo'));
+  document.getElementById(id).classList.add('ativo');
+  if (id === 'tela-ranking') renderizarRanking();
+  if (id === 'tela-inicio') atualizarBannerRecorde();
+}
+
+/* ===========================
+   SELEÇÃO DE NÍVEL
+=========================== */
+function selecionarNivel(nivel, btn) {
+  nivelAtual = nivel;
+  document.querySelectorAll('.btn-nivel').forEach(b => b.classList.remove('selecionado'));
+  btn.classList.add('selecionado');
+}
+
+/* ===========================
+   INÍCIO DO JOGO
+=========================== */
+function iniciarJogo() {
+  const cfg = NIVEIS[nivelAtual];
+  vidas = cfg.vidas;
+  pontos = 0;
+  acertos = 0;
+  indice = 0;
+
+  // Embaralha e seleciona 10 perguntas
+  perguntasDoJogo = [...BANCO[nivelAtual]].sort(() => Math.random() - 0.5).slice(0, 10);
+
+  // Coloca badge de nível
+  const badge = document.getElementById('badge-nivel-quiz');
+  badge.innerHTML = `<span class="badge-nivel ${cfg.badge}">${cfg.label}</span>`;
+
+  mostrarTela('tela-quiz');
+  carregarPergunta();
+}
+
+/* ===========================
+   CARREGAR PERGUNTA
+=========================== */
+function carregarPergunta() {
+  respondeu = false;
+  document.getElementById('mensagem-feedback').textContent = '';
+  document.getElementById('btn-proxima').disabled = true;
+
+  const total = perguntasDoJogo.length;
+  const pct = (indice / total) * 100;
+  document.getElementById('progresso-texto').textContent = `Pergunta ${indice + 1} de ${total}`;
+  document.getElementById('progresso-fill').style.width = pct + '%';
+  document.getElementById('hud-fase').textContent = `${indice+1}/${total}`;
+
+  const p = perguntasDoJogo[indice];
+  const textoEl = document.getElementById('pergunta-texto');
+  textoEl.textContent = p.pergunta;
+  textoEl.classList.remove('anima');
+  void textoEl.offsetWidth;
+  textoEl.classList.add('anima');
+
+  const letras = ['A','B','C','D'];
+  const opcoes = [...p.opcoes].sort(() => Math.random() - 0.5);
+  const opcoesDiv = document.getElementById('opcoes');
+  opcoesDiv.innerHTML = '';
+  opcoes.forEach((op, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-opcao';
+    btn.innerHTML = `<span class="letra">${letras[i]}</span>${op}`;
+    btn.onclick = () => verificarResposta(btn, op, p.resposta);
+    opcoesDiv.appendChild(btn);
+  });
+
+  atualizarHUD();
+  iniciarCronometro();
+}
+
+/* ===========================
+   CRONÔMETRO
+=========================== */
+function iniciarCronometro() {
+  pararCronometro();
+  const cfg = NIVEIS[nivelAtual];
+  tempoTotal = cfg.tempo;
+  tempoRestante = cfg.tempo;
+  atualizarBarraCronometro();
+
+  timerID = setInterval(() => {
+    tempoRestante--;
+    atualizarBarraCronometro();
+    if (tempoRestante <= 5 && tempoRestante > 0) tocarSom('tick');
+    if (tempoRestante <= 0) {
+      pararCronometro();
+      tempoEsgotado();
+    }
+  }, 1000);
+}
+
+function pararCronometro() {
+  if (timerID) { clearInterval(timerID); timerID = null; }
+}
+
+function atualizarBarraCronometro() {
+  const fill = document.getElementById('cronometro-fill');
+  const pct = (tempoRestante / tempoTotal) * 100;
+  fill.style.width = pct + '%';
+  fill.classList.toggle('urgente', tempoRestante <= 5);
+  document.getElementById('hud-tempo').textContent = tempoRestante + 's';
+}
+
+function tempoEsgotado() {
+  if (respondeu) return;
+  respondeu = true;
+  const p = perguntasDoJogo[indice];
+  const botoes = document.querySelectorAll('#opcoes .btn-opcao');
+  botoes.forEach(b => {
+    b.disabled = true;
+    if (b.textContent.slice(1) === p.resposta || b.textContent.includes(p.resposta)) {
+      b.classList.add('correta');
+    }
+  });
+  vidas--;
+  atualizarHUD();
+  document.getElementById('mensagem-feedback').textContent = '⏰ Tempo esgotado! Você perdeu uma vida.';
+  document.getElementById('mensagem-feedback').style.color = '#f43f5e';
+  tocarSom('erro');
+  document.querySelector('.card').classList.add('pulso-erro');
+  setTimeout(() => document.querySelector('.card').classList.remove('pulso-erro'), 500);
+  if (vidas <= 0) { setTimeout(finalizarJogo, 900); }
+  else { document.getElementById('btn-proxima').disabled = false; }
+}
+
+/* ===========================
+   VERIFICAR RESPOSTA
+=========================== */
+function verificarResposta(botaoClicado, opcaoEscolhida, respostaCorreta) {
+  if (respondeu) return;
+  respondeu = true;
+  pararCronometro();
+
+  const botoes = document.querySelectorAll('#opcoes .btn-opcao');
+  botoes.forEach(b => {
+    b.disabled = true;
+    if (b.textContent.includes(respostaCorreta)) b.classList.add('correta');
+  });
+
+  const fb = document.getElementById('mensagem-feedback');
+  const card = document.querySelector('.card');
+
+  if (opcaoEscolhida === respostaCorreta) {
+    const cfg = NIVEIS[nivelAtual];
+    const bonus = Math.ceil(tempoRestante * 2 * cfg.multiplicador);
+    const ganho = 10 + bonus;
+    pontos += ganho;
+    acertos++;
+    fb.textContent = `✅ Correto! +${ganho} pontos (incluindo bônus de tempo)`;
+    fb.style.color = '#22d3ee';
+    tocarSom('certo');
+    card.classList.add('pulso-certo');
+    setTimeout(() => card.classList.remove('pulso-certo'), 500);
+  } else {
+    botaoClicado.classList.add('errada');
+    vidas--;
+    fb.textContent = `❌ Errado! A resposta era: ${respostaCorreta}`;
+    fb.style.color = '#f43f5e';
+    tocarSom('erro');
+    card.classList.add('pulso-erro');
+    setTimeout(() => card.classList.remove('pulso-erro'), 500);
+  }
+
+  atualizarHUD();
+
+  if (vidas <= 0) { setTimeout(finalizarJogo, 900); }
+  else { document.getElementById('btn-proxima').disabled = false; }
+}
+
+/* ===========================
+   PRÓXIMA PERGUNTA
+=========================== */
+function proximaPergunta() {
+  indice++;
+  if (indice >= perguntasDoJogo.length) { finalizarJogo(); }
+  else { carregarPergunta(); }
+}
+
+/* ===========================
+   ATUALIZAR HUD
+=========================== */
+function atualizarHUD() {
+  document.getElementById('hud-pontos').textContent = pontos;
+  const corações = '❤️'.repeat(Math.max(0, vidas)) || '💔';
+  document.getElementById('hud-vidas').textContent = corações;
+}
+
+/* ===========================
+   FINALIZAR JOGO
+=========================== */
+function finalizarJogo() {
+  pararCronometro();
+  const total = perguntasDoJogo.length;
+  const zerou = vidas <= 0;
+  const precisao = Math.round((acertos / total) * 100);
+
+  document.getElementById('resultado-icone').textContent = zerou ? '💔' : (acertos === total ? '🏆' : '⭐');
+  document.getElementById('resultado-titulo').textContent = zerou ? 'Game Over!' : (acertos === total ? 'Perfeito!' : 'Bom jogo!');
+  document.getElementById('resultado-sub').textContent = zerou
+    ? 'Você perdeu todas as vidas. Tente novamente!'
+    : `Você acertou ${acertos} de ${total} perguntas!`;
+
+  document.getElementById('resultado-pontos').textContent = pontos;
+  document.getElementById('resultado-acertos').textContent = `${acertos}/${total}`;
+  document.getElementById('resultado-precisao').textContent = `${precisao}%`;
+
+  // Checar recorde
+  const recorde = parseInt(localStorage.getItem('quizRecorde') || '0');
+  const recEl = document.getElementById('placar-recorde');
+  if (pontos > recorde) {
+    localStorage.setItem('quizRecorde', pontos);
+    recEl.style.display = 'flex';
+    tocarSom('vitoria');
+  } else {
+    recEl.style.display = 'none';
+    if (zerou) tocarSom('derrota'); else tocarSom('vitoria');
+  }
+
+  mostrarTela('tela-resultado');
+}
+
+/* ===========================
+   RANKING
+=========================== */
+function salvarEIrParaRanking() {
+  const nome = document.getElementById('input-nome').value.trim() || 'Anônimo';
+  const ranking = JSON.parse(localStorage.getItem('quizRanking') || '[]');
+  ranking.push({
+    nome,
+    pontos,
+    acertos,
+    total: perguntasDoJogo.length,
+    nivel: NIVEIS[nivelAtual].label,
+    data: new Date().toLocaleDateString('pt-BR'),
+  });
+  ranking.sort((a, b) => b.pontos - a.pontos);
+  const top = ranking.slice(0, 10);
+  localStorage.setItem('quizRanking', JSON.stringify(top));
+  mostrarTela('tela-ranking');
+}
+
+function renderizarRanking() {
+  const ranking = JSON.parse(localStorage.getItem('quizRanking') || '[]');
+  const lista = document.getElementById('ranking-lista');
+  if (ranking.length === 0) {
+    lista.innerHTML = '<div class="ranking-vazio">Ainda sem jogadas registradas.<br>Jogue para aparecer aqui! 🎮</div>';
+    return;
+  }
+  const posClasse = ['ouro','prata','bronze'];
+  const medalha  = ['🥇','🥈','🥉'];
+  lista.innerHTML = ranking.map((r, i) => `
+    <div class="ranking-item ${i < 3 ? 'destaque':''}">
+      <div class="ranking-pos ${posClasse[i]||''}">${medalha[i] || (i+1)}</div>
+      <div class="ranking-info">
+        <div class="ranking-nome">${r.nome}</div>
+        <div class="ranking-detalhe">${r.nivel} · ${r.acertos}/${r.total} acertos · ${r.data}</div>
+      </div>
+      <div class="ranking-pts">${r.pontos}</div>
+    </div>
+  `).join('');
+}
+
+function limparRanking() {
+  if (confirm('Tem certeza que quer limpar o ranking?')) {
+    localStorage.removeItem('quizRanking');
+    renderizarRanking();
+  }
+}
+
+function atualizarBannerRecorde() {
+  const r = parseInt(localStorage.getItem('quizRecorde') || '0');
+  document.getElementById('valor-recorde-inicio').textContent = r + ' pts';
+}
+
+/* Inicializa */
+atualizarBannerRecorde();
+</script>
+</body>
+</html>
