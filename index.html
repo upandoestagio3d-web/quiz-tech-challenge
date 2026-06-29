@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Tech Challenge</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="container">
+
+    <section class="card">
+
+      <h1>Quiz Tech Challenge</h1>
+      <p class="subtitulo">Teste seus conhecimentos em tecnologia!</p>
+
+      <div class="info">
+        <span>Pontos: <strong id="pontos">0</strong></span>
+        <span>Vidas: <strong id="vidas">❤️❤️❤️</strong></span>
+      </div>
+
+      <div id="pergunta" class="pergunta">
+        Carregando pergunta...
+      </div>
+
+      <div id="opcoes" class="opcoes"></div>
+
+      <p id="mensagem" class="mensagem"></p>
+
+      <button id="proxima" onclick="proximaPergunta()" disabled>
+        Próxima
+      </button>
+
+      <button id="reiniciar" onclick="reiniciarJogo()" class="oculto">
+        Jogar novamente
+      </button>
+
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
